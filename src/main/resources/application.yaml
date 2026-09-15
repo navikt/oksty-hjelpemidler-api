@@ -1,0 +1,14 @@
+spring:
+  application:
+    name: hjelpemiddel-api
+
+  datasource:
+    username: ${OEBS_DB_USERNAME}
+    password:  ${OEBS_DB_PASSWORD}
+    url: ${ORACLE_URL}
+    driver-class-name: oracle.jdbc.OracleDriver
+  jpa:
+    properties:
+        hibernate:
+            dialect: org.hibernate.dialect.OracleDialect
+

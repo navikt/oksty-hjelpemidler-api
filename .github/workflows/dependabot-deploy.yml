@@ -1,0 +1,62 @@
+name: Dependabot deploy verification
+
+on:
+  pull_request:
+    branches:
+      - main
+
+concurrency:
+  group: dependabot-deploy
+  cancel-in-progress: false
+
+jobs:
+  verify-deploy:
+    name: Verify dependabot deploy
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - name: Skip for non-dependabot PRs
+        if: github.event.pull_request.user.login != 'dependabot[bot]'
+        run: echo "Not a dependabot PR, skipping deploy verification"
+
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        if: github.event.pull_request.user.login == 'dependabot[bot]'
+
+      - uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961
+        if: github.event.pull_request.user.login == 'dependabot[bot]'
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          cache: maven
+
+      - name: Build and test
+        if: github.event.pull_request.user.login == 'dependabot[bot]'
+        run: mvn -B verify -Pcoverage
+
+      - name: Push Docker image to GAR
+        if: github.event.pull_request.user.login == 'dependabot[bot]'
+        uses: nais/docker-build-push@0e73849f69ff260ee27597553c0a7848ca4e9795
+        id: docker-build-push
+        with:
+          team: team-oebs
+
+      - name: Deploy to dedicated dependabot workload
+        if: github.event.pull_request.user.login == 'dependabot[bot]'
+        uses: nais/deploy/actions/deploy@027a91857992525139798892f2804b0ca21f4af6
+        env:
+          CLUSTER: dev-gcp
+          RESOURCE: .nais/app-dependabot.yaml
+          VAR: image=${{ steps.docker-build-push.outputs.image }}
+
+      - name: Cleanup dedicated dependabot workload
+        if: always() && github.event.pull_request.user.login == 'dependabot[bot]'
+        uses: nais/login@40b72a35a18ddf2ad74b632461139ab838cc2a2f # v0
+        with:
+          team: team-oebs
+
+      - name: Delete workload
+        if: always() && github.event.pull_request.user.login == 'dependabot[bot]'
+        run: kubectl delete application okonomimodell-api-dependabot -n team-oebs --ignore-not-found=true
