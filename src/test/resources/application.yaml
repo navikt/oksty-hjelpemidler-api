@@ -1,0 +1,14 @@
+spring:
+  application:
+    name: hjelpemiddel-api
+
+  datasource:
+    username: username
+    password:  password
+    url: jdbc:oracle:thin:@//localhost:1521/placeholder
+    driver-class-name: oracle.jdbc.OracleDriver
+  jpa:
+    properties:
+        hibernate:
+            dialect: org.hibernate.dialect.OracleDialect
+

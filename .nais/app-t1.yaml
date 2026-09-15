@@ -1,0 +1,59 @@
+apiVersion: nais.io/v1alpha1
+kind: Application
+metadata:
+  name: hjelpemidler-api
+  namespace: team-oebs
+  labels:
+    team: team-oebs
+spec:
+  image: {{image}}
+  port: 8080
+
+  azure:
+    application:
+      enabled: true
+      allowAllUsers: true
+      tenant: trygdeetaten.no
+
+  envFrom:
+    - secret: hjelpemidler-api
+    - secret: hjelpemidler-api-oracle
+
+  prometheus:
+    enabled: true
+    path: /api/v1/actuator/prometheus
+
+  liveness:
+    path: /api/v1/actuator/health/liveness
+    initialDelay: 60
+    periodSeconds: 10
+    failureThreshold: 3
+
+  readiness:
+    path: /api/v1/actuator/health/readiness
+    initialDelay: 60
+    periodSeconds: 10
+    failureThreshold: 3
+
+  resources:
+    requests:
+      cpu: 50m
+      memory: 256Mi
+    limits:
+      memory: 768Mi
+
+  replicas:
+    min: 1
+    max: 2
+    cpuThresholdPercentage: 80
+
+  ingresses:
+    - https://hjelpemidler-api.dev.nav.no
+
+  accessPolicy:
+    inbound:
+      rules:
+        - application: azure-token-generator
+          namespace: nais
+          cluster: dev-gcp
+
