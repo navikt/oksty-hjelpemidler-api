@@ -48,7 +48,7 @@ spec:
     cpuThresholdPercentage: 80
 
   ingresses:
-    - https://hjelpemidler-api.dev.nav.no
+    - https://hjelpemidler-api.intern.dev.nav.no
 
   accessPolicy:
     inbound:
