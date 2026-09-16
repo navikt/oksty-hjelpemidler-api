@@ -11,4 +11,33 @@ spring:
     properties:
         hibernate:
             dialect: org.hibernate.dialect.OracleDialect
+  jackson:
+    mapper:
+      sort-properties-alphabetically: false
 
+springdoc:
+  api-docs:
+    path: /api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    operations-sorter: method
+    url: /openapi/hjelpemidler/openapi.yaml
+
+server: #Det er denne som gir en server for tjenesten
+  servlet:
+    context-path: /api/v1
+
+management:
+  endpoint:
+    health:
+      probes:
+        enabled: true
+  health:
+    livenessstate:
+      enabled: true
+    readinessstate:
+      enabled: true
+
+  #todo: Skal disse med?
+  #management.endpoints.web.exposure.include=health,prometheus
+  #management.endpoint.prometheus.access=unrestricted
