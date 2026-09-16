@@ -38,6 +38,12 @@ management:
     readinessstate:
       enabled: true
 
+no.nav.security.jwt:
+  issuer:
+    azure:
+      accepted_audience: ${AZURE_APP_CLIENT_ID}
+      discoveryurl:  ${AZURE_APP_WELL_KNOWN_URL}
+
   #todo: Skal disse med?
   #management.endpoints.web.exposure.include=health,prometheus
   #management.endpoint.prometheus.access=unrestricted
