@@ -40,7 +40,7 @@ management:
 
 no.nav.security.jwt:
   issuer:
-    azure:
+    azuread:
       accepted_audience: ${AZURE_APP_CLIENT_ID}
       discoveryurl:  ${AZURE_APP_WELL_KNOWN_URL}
 
