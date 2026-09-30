@@ -1,9 +1,10 @@
 package no.navn.oebs.hjelpemiddel.api.controller;
 
 import lombok.AllArgsConstructor;
-import no.nav.security.token.support.core.api.Protected;
+import no.nav.security.token.support.core.api.Unprotected;
+import no.navn.oebs.hjelpemiddel.api.service.BrukerService;
 import org.openapitools.api.BrukerApi;
-import org.openapitools.model.Bruker;
+import org.openapitools.model.*;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 
@@ -12,35 +13,43 @@ import org.springframework.stereotype.Controller;
 @AllArgsConstructor
 public class BrukerController implements BrukerApi {
 
-    //private final BrukerService brukerService;
+    private final BrukerService brukerService;
                                          
+    @Unprotected
     @Override
-    @Protected
-    public ResponseEntity<Bruker> getBruker(String fnr) {
-//        Bruker bruker = brukerService.getBrukerByFnr(fnr);
-//        if (bruker != null) {
-//            return ResponseEntity.ok(bruker);
-//        } else {
-//            return ResponseEntity.notFound().build();
-//        }
-        return ResponseEntity.ok(new Bruker());
+    public ResponseEntity<Status> getBrukerStatus(String brukerNr) {
+        Status bruker = brukerService.getBrukerByBrukerNr(brukerNr);
+        if (bruker != null) {
+            return ResponseEntity.ok(bruker);
+        } else {
+            return ResponseEntity.notFound().build();
+        }
     }
 
+    @Unprotected
     @Override
-    @Protected
-    public ResponseEntity<String> getBrukernummer(String fnr) {
-//        String brukerNr = brukerService.getBrukerNrByFnr(fnr);
-//        return ResponseEntity.ok(brukerNr);
-        return ResponseEntity.ok("123456789");
+    public ResponseEntity<BrukernummerOppslagResponse> getBrukernummer(BrukernummerOppslagRequest request) {
+        String brukerNr = brukerService.getBrukerNrByFnr(request.getFnr());
+        BrukernummerOppslagResponse response = new BrukernummerOppslagResponse();
+        response.setBrukernummer(brukerNr);
+        return ResponseEntity.ok(response);
     }
 
+    @Unprotected
     @Override
-    @Protected
-    public ResponseEntity<String> getFodselsnummer(String brukerNr) {
-//        String fodselsnummer = brukerService.getFnrByBrukerNr(brukerNr);
-//        return ResponseEntity.ok(fodselsnummer);
-        return ResponseEntity.ok("01010112345");
+    public ResponseEntity<Brukerpass> getBrukerPass(String brukernummer) {
+        //todo: Legge inn handtering av hvis fnr ikke finnes i kontraktDB
+        Brukerpass brukerpass = brukerService.getBrukerpassByBrukernummer(brukernummer);
+        if (brukerpass == null){
+            return ResponseEntity.notFound().build();
+        }
+        return ResponseEntity.ok(brukerpass);
     }
 
-
+    @Unprotected
+    @Override
+    public ResponseEntity<Adresser> getAdresser(String brukernummer){
+        Adresser adresser = brukerService.getAdresseByBrukerNr(brukernummer);
+        return ResponseEntity.ok(adresser);
+    }
 }
