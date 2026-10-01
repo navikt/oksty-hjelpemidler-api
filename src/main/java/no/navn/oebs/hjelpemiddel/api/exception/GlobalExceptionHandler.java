@@ -81,6 +81,24 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler
+    public ResponseEntity<Map<String, Object>> handleResourceNotFound(
+            ResourceNotFoundException ex,
+            HttpServletRequest request) {
+
+        String correlationId = sanitizeForLog(getCorrelationId(request));
+        String requestUri = getUriWithoutPathParameters(request);
+        String sanitizedMessage = (ex == null || ex.getMessage() == null) ? null : sanitizeForLog(ex.getMessage());
+
+        LOGGER.warn(
+                "404 response due to missing resource: correlationId={} path={} reason={}",
+                correlationId,
+                requestUri,
+                sanitizedMessage);
+        Map<String, Object> response = buildErrorResponse("Not Found", sanitizedMessage, 404, request);
+        return new ResponseEntity<>(response, org.springframework.http.HttpStatus.NOT_FOUND);
+    }
+
+    @ExceptionHandler
     public ResponseEntity<Map<String, Object>> handleTypeMismatch(
             MethodArgumentTypeMismatchException ex,
             HttpServletRequest request) {
