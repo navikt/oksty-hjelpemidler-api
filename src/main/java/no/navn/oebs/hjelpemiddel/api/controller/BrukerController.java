@@ -1,7 +1,7 @@
 package no.navn.oebs.hjelpemiddel.api.controller;
 
 import lombok.AllArgsConstructor;
-import no.nav.security.token.support.core.api.Unprotected;
+import no.nav.security.token.support.core.api.Protected;
 import no.navn.oebs.hjelpemiddel.api.service.BrukerService;
 import org.openapitools.api.BrukerApi;
 import org.openapitools.model.*;
@@ -18,20 +18,20 @@ public class BrukerController implements BrukerApi {
 
     private final BrukerService brukerService;
                                          
-    @Unprotected
+    @Protected
     @Override
     public ResponseEntity<Status> getBrukerStatus(UUID xCorrelationId, String brukernummer) {
         return ResponseEntity.ok(brukerService.getStatusByBrukernummer(brukernummer));
     }
 
-    @Unprotected
+    @Protected
     @Override
     public ResponseEntity<BrukernummerOppslagResponse> getBrukernummer(UUID xCorrelationId, BrukernummerOppslagRequest request) {
         String brukernummer = brukerService.getBrukernummerByFnr(request.getFnr());
         return ResponseEntity.ok(new BrukernummerOppslagResponse().brukernummer(brukernummer));
     }
 
-    @Unprotected
+    @Protected
     @Override
     public ResponseEntity<List<Brukerpass>> getBrukerPass(UUID xCorrelationId, String brukernummer) {
         List<Brukerpass> brukerpass = brukerService.getBrukerpassByBrukernummer(brukernummer);
@@ -40,7 +40,7 @@ public class BrukerController implements BrukerApi {
         return ResponseEntity.ok(brukerpass);
     }
 
-    @Unprotected
+    @Protected
     @Override
     public ResponseEntity<Adresser> getAdresser(UUID xCorrelationId, String brukernummer){
         return ResponseEntity.ok(brukerService.getAdresserByBrukernummer(brukernummer));
