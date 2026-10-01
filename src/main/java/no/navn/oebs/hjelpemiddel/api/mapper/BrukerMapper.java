@@ -18,11 +18,17 @@ public class BrukerMapper {
             return null;
         }
         Adresser adresser = new Adresser();
-        for (BrukerDB brukerDB : brukerDBList) {
-            adresser.getAdresser().add(getPersonAdresse(brukerDB));
-        }
-        brukerDBList.forEach(brukerDB -> adresser.getAdresser().add(getPersonAdresse(brukerDB)));
-        brukerDBList.stream().filter( it -> it.getPrimaerAdr().equals("Y")).findFirst().ifPresent(primAdr ->  adresser.setPrimaeradresse(getPersonAdresse(primAdr)));
+        //todo: Hvordan skal det håndteres hvis det finnes flere adresser med primæradresse? Skal primæradressen inkluderes i listen over adresser?
+        brukerDBList.forEach(ad ->
+                {
+                    Personadresse personadresse= getPersonAdresse(ad);
+                    if ("Y".equals(ad.getPrimaerAdr())) {
+                        adresser.setPrimaeradresse(personadresse);
+                    } else {
+                        adresser.addAdresserItem(personadresse);
+                    }
+                }
+        );
         return adresser;
     }
 

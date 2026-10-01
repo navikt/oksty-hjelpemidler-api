@@ -14,9 +14,7 @@ import lombok.NoArgsConstructor;
 @Table(name = "xxrtv_digihot_oebs_brukerp_v", schema = "APPS")
 public class KontraktDB {
 
-    //TODO: Hva er dette? Er det en kontrakt for en bruker? Et pass for en bruker?
-
-    // Henter data fra denne tabellen for å kunne mappe bruker_nummer til fodselsnummer
+    // Det finnes flere type kontrakter, men dette viewet inneholder bare brukerpass
 
     //Måte å registere en avtale. Eksemepel kontakte leverandør for å hente ut det
     //Kan ha flere kontrakter. Brukerpass er en type kontrakt, men nå er det den eneste
@@ -24,6 +22,9 @@ public class KontraktDB {
 
 
     @Id
+    @Column(name = "kontrakt_id")
+    private String id;
+
     @Column(name = "fnr")
     private String fodselNr;
 

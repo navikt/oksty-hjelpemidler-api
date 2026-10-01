@@ -23,42 +23,31 @@ public class BrukerService {
 
     public Status getBrukerByBrukerNr(String brukerNr) {
         List<BrukerDB> brukerDBList = adresseJpaRepository.getBrukerByBrukerNr(brukerNr);
-        if (!brukerDBList.isEmpty()) {
-            return brukerMapper.mapBrukerDBToStatus(brukerDBList.getFirst());
-        } else {
-            return null;
-        }
+        return !brukerDBList.isEmpty() ? brukerMapper.mapBrukerDBToStatus(brukerDBList.getFirst()) : null;
     }
-
 
     public Adresser getAdresseByBrukerNr(String brukernummer) {
         List<BrukerDB> brukerDBList = adresseJpaRepository.getBrukerByBrukerNr(brukernummer);
-        if (!brukerDBList.isEmpty()) {
-            return brukerMapper.mapDbAdreserToAdresser(brukerDBList);
-        } else {
-            return null;
-        }
+        return !brukerDBList.isEmpty() ? brukerMapper.mapDbAdreserToAdresser(brukerDBList) : null;
     }
 
     public String getBrukerNrByFnr(String fnr) {
         List<String> brukerNr = adresseJpaRepository.getBrukerNrByFnr(fnr);
-        return brukerNr.getFirst();
+        return !brukerNr.isEmpty() ? brukerNr.getFirst() : null;
     }
 
     public String getFnrByBrukerNr(String brukerNr) {
         List<String> fnr = adresseJpaRepository.getFnrByBrukerNr(brukerNr);
-        return fnr.getFirst();
+        return !fnr.isEmpty() ? fnr.getFirst() : null;
     }
 
-    public Brukerpass getBrukerpassByBrukernummer(String brukernummer) {
+    public List<Brukerpass> getBrukerpassByBrukernummer(String brukernummer) {
         String fnr = getFnrByBrukerNr(brukernummer);
-        KontraktDB kontraktDB = kontraktJpaRepository.getBrukerpassByFnr(fnr);
-        if (kontraktDB == null) {
+        if (fnr == null) {
             return null;
         }
-        return brukerMapper.getBrukerPass(kontraktDB);
+        List<KontraktDB> kontraktDB = kontraktJpaRepository.getBrukerpassByFnr(fnr);
+        return kontraktDB != null ? kontraktDB.stream().map(brukerMapper::getBrukerPass).toList() : null;
     }
-
-
 
 }
