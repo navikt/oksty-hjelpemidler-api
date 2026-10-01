@@ -20,15 +20,15 @@ public class BrukerController implements BrukerApi {
                                          
     @Unprotected
     @Override
-    public ResponseEntity<Status> getBrukerStatus(UUID xCorrelationId, String brukerNr) {
-        return ResponseEntity.ok(brukerService.getBrukerByBrukerNr(brukerNr));
+    public ResponseEntity<Status> getBrukerStatus(UUID xCorrelationId, String brukernummer) {
+        return ResponseEntity.ok(brukerService.getStatusByBrukernummer(brukernummer));
     }
 
     @Unprotected
     @Override
     public ResponseEntity<BrukernummerOppslagResponse> getBrukernummer(UUID xCorrelationId, BrukernummerOppslagRequest request) {
-        String brukerNr = brukerService.getBrukerNrByFnr(request.getFnr());
-        return ResponseEntity.ok(new BrukernummerOppslagResponse().brukernummer(brukerNr));
+        String brukernummer = brukerService.getBrukernummerByFnr(request.getFnr());
+        return ResponseEntity.ok(new BrukernummerOppslagResponse().brukernummer(brukernummer));
     }
 
     @Unprotected
@@ -43,6 +43,6 @@ public class BrukerController implements BrukerApi {
     @Unprotected
     @Override
     public ResponseEntity<Adresser> getAdresser(UUID xCorrelationId, String brukernummer){
-        return ResponseEntity.ok(brukerService.getAdresseByBrukerNr(brukernummer));
+        return ResponseEntity.ok(brukerService.getAdresserByBrukernummer(brukernummer));
     }
 }

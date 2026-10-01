@@ -1,7 +1,7 @@
 package no.navn.oebs.hjelpemiddel.api.mapper;
 
-import no.navn.oebs.hjelpemiddel.api.repository.entity.BrukerDB;
-import no.navn.oebs.hjelpemiddel.api.repository.entity.KontraktDB;
+import no.navn.oebs.hjelpemiddel.api.repository.entity.BrukerAdresseEntity;
+import no.navn.oebs.hjelpemiddel.api.repository.entity.BrukerPassEntity;
 import org.openapitools.model.*;
 import org.springframework.stereotype.Component;
 
@@ -13,16 +13,16 @@ import java.util.List;
 @Component
 public class BrukerMapper {
 
-    public Adresser mapDbAdreserToAdresser(List<BrukerDB> brukerDBList) {
-        if (brukerDBList == null || brukerDBList.isEmpty()) {
+    public Adresser toAdresser(List<BrukerAdresseEntity> adresserEntity) {
+        if (adresserEntity == null || adresserEntity.isEmpty()) {
             return null;
         }
         Adresser adresser = new Adresser();
         //todo: Hvordan skal det håndteres hvis det finnes flere adresser med primæradresse? Skal primæradressen inkluderes i listen over adresser?
-        brukerDBList.forEach(ad ->
+        adresserEntity.forEach(adresseEntity ->
                 {
-                    Personadresse personadresse= getPersonAdresse(ad);
-                    if ("Y".equals(ad.getPrimaerAdr())) {
+                    Personadresse personadresse= toPersonadresse(adresseEntity);
+                    if ("Y".equals(adresseEntity.getPrimaerAdr())) {
                         adresser.setPrimaeradresse(personadresse);
                     } else {
                         adresser.addAdresserItem(personadresse);
@@ -32,50 +32,49 @@ public class BrukerMapper {
         return adresser;
     }
 
-    public Status mapBrukerDBToStatus(BrukerDB brukerDB) {
-        return new Status().aktiv(getStatus(brukerDB)); //todo: Skal aktiv være en eller to parametre?
+    public Status toStatus(BrukerAdresseEntity adresse) {
+        //todo: Skal aktiv være en eller to parametre?
+        return new Status().aktiv(isActive(adresse));
     }
 
-    public Personadresse getPersonAdresse(BrukerDB brukerDB) {
+    public Personadresse toPersonadresse(BrukerAdresseEntity adresse) {
         return new Personadresse()
-                .bostedsadresse(getAdresse(brukerDB))
-                .leveringsadresse(getLeveringsAdresse(brukerDB));
+                .bostedsadresse(toBostedsadresse(adresse))
+                .leveringsadresse(toLeveringsadresse(adresse));
     }
 
-    public Adresse getAdresse(BrukerDB brukerDB) {
-        Adresse adresse = new Adresse();
-        adresse.setGateadresse(brukerDB.getAdresse()); //Hva slags adresse er dette?
-        adresse.setPostnummer(brukerDB.getPostNr());
-        adresse.by(brukerDB.getBy());
-        adresse.kommune(brukerDB.getKommune());
-        return adresse;
+    public Adresse toBostedsadresse(BrukerAdresseEntity adresse) {
+        return new Adresse()
+                .gateadresse(adresse.getAdresse())
+                .postnummer(adresse.getPostNr())
+                .by(adresse.getBy())
+                .kommune(adresse.getKommune());
     }
 
-    public Adresse getLeveringsAdresse(BrukerDB brukerDB) {
-        Adresse adresse = new Adresse();
-        adresse.setGateadresse(brukerDB.getLeveringsAdresse());
-        adresse.setPostnummer(brukerDB.getLeveringsPostNr());
-        adresse.by(brukerDB.getLeveringsBy());
-        adresse.kommune(brukerDB.getLeveringsKommune());
-        adresse.bydel(brukerDB.getLeveringsBydel());
-        return adresse;
+    public Adresse toLeveringsadresse(BrukerAdresseEntity adresse) {
+        return new Adresse()
+                .gateadresse(adresse.getLeveringsAdresse())
+                .postnummer(adresse.getLeveringsPostNr())
+                .by(adresse.getLeveringsBy())
+                .kommune(adresse.getLeveringsKommune())
+                .bydel(adresse.getLeveringsBydel());
     }
 
-    public boolean getStatus(BrukerDB brukerDB) {
+    public boolean isActive(BrukerAdresseEntity brukerAdresse) {
         String activeStatus = "A"; // "A"  from OeBS indicates active status
-        return brukerDB.getStatusBrukernr().equals(activeStatus)
-                && brukerDB.getStatusFnr().equals(activeStatus);
+        return brukerAdresse.getStatusBrukernr().equals(activeStatus)
+                && brukerAdresse.getStatusFnr().equals(activeStatus);
     }
 
-    public Brukerpass getBrukerPass(KontraktDB kontraktDB){
+    public Brukerpass toBrukerpass(BrukerPassEntity brukerPass){
         return new Brukerpass()
-                .kontraktnr(kontraktDB.getKontraktNr())
-                .startdato(mapStringToLocalDate(kontraktDB.getStartDate()))
-                .sluttdato(mapStringToLocalDate(kontraktDB.getEndDate()));
+                .kontraktnr(brukerPass.getKontraktNr())
+                .startdato(toLocalDate(brukerPass.getStartDate()))
+                .sluttdato(toLocalDate(brukerPass.getEndDate()));
     }
 
 
-    public LocalDate mapStringToLocalDate(String dateString) {
+    public LocalDate toLocalDate(String dateString) {
         if (dateString == null || dateString.isEmpty()) {
             return null;
         }

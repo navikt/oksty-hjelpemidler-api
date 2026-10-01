@@ -12,7 +12,7 @@ import lombok.NoArgsConstructor;
 @Getter
 @NoArgsConstructor
 @Table(name = "xxrtv_digihot_oebs_brukerp_v", schema = "APPS")
-public class KontraktDB {
+public class BrukerPassEntity {
 
     // Det finnes flere type kontrakter, men dette viewet inneholder bare brukerpass
 

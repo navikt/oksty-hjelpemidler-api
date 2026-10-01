@@ -12,7 +12,7 @@ import lombok.NoArgsConstructor;
 @Getter
 @NoArgsConstructor
 @Table(name = "xxrtv_digihot_oebs_adr_fnr_v", schema = "APPS")
-public class BrukerDB {
+public class BrukerAdresseEntity {
 
     // Henter data fra denne tabellen for å kunne mappe bruker_nummer til fodselsnummer
 
