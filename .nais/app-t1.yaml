@@ -50,10 +50,3 @@ spec:
   ingresses:
     - https://hjelpemidler-api.intern.dev.nav.no
 
-  accessPolicy:
-    inbound:
-      rules:
-        - application: azure-token-generator
-          namespace: nais
-          cluster: dev-gcp
-
