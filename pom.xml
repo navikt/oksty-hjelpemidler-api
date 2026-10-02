@@ -59,7 +59,7 @@
 		<dependency>
 			<groupId>org.springdoc</groupId>
 			<artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
-			<version>3.1.0</version>
+			<version>3.1.1</version>
 		</dependency>
 		<dependency>
 			<groupId>no.nav.oebs</groupId>
@@ -85,12 +85,12 @@
 		<dependency>
 			<groupId>no.nav.security</groupId>
 			<artifactId>token-validation-spring</artifactId>
-			<version>6.0.12</version>
+			<version>6.0.13</version>
 		</dependency>
 		<dependency>
 			<groupId>no.nav.security</groupId>
 			<artifactId>token-validation-spring-test</artifactId>
-			<version>6.0.12</version>
+			<version>6.0.13</version>
 			<scope>test</scope>
 		</dependency>
 		<dependency>
