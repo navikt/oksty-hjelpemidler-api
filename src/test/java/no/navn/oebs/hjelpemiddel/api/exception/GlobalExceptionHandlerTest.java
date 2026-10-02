@@ -95,4 +95,9 @@ class GlobalExceptionHandlerTest {
         }
     }
 
+    @SuppressWarnings("unused")
+    private void validationTarget(Object request) {
+        // only used to create MethodParameter for MethodArgumentNotValidException in tests
+    }
+
 }
