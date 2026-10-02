@@ -95,7 +95,4 @@ class GlobalExceptionHandlerTest {
         }
     }
 
-    @SuppressWarnings("unused")
-    private void validationTarget(Object request) {
-    }
 }
