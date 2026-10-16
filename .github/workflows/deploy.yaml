@@ -53,7 +53,7 @@ jobs:
 
       - name: Push Docker image to GAR
         if: github.event_name != 'pull_request' && github.ref_name == 'main'
-        uses: nais/docker-build-push@423a915c9b72edf2ba848b88171ccb0489e2a40a
+        uses: nais/docker-build-push@dd7421d5068057a020ca46ead966c26190c516b1
         id: docker-build-push
         with:
           team: team-oebs
