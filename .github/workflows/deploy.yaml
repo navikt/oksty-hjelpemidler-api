@@ -32,7 +32,7 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
 
-      - uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6
+      - uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad
         with:
           java-version: '21'
           distribution: 'temurin'
@@ -53,7 +53,7 @@ jobs:
 
       - name: Push Docker image to GAR
         if: github.event_name != 'pull_request' && github.ref_name == 'main'
-        uses: nais/docker-build-push@423a915c9b72edf2ba848b88171ccb0489e2a40a
+        uses: nais/docker-build-push@dd7421d5068057a020ca46ead966c26190c516b1
         id: docker-build-push
         with:
           team: team-oebs
