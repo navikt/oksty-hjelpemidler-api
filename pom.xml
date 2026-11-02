@@ -85,12 +85,12 @@
 		<dependency>
 			<groupId>no.nav.security</groupId>
 			<artifactId>token-validation-spring</artifactId>
-			<version>6.0.13</version>
+			<version>6.0.12</version>
 		</dependency>
 		<dependency>
 			<groupId>no.nav.security</groupId>
 			<artifactId>token-validation-spring-test</artifactId>
-			<version>6.0.13</version>
+			<version>6.0.12</version>
 			<scope>test</scope>
 		</dependency>
 		<dependency>

@@ -69,7 +69,7 @@ class BrukerControllerTest {
         private Adresser adresser;
 
         private StubBrukerService() {
-            super(null, null, null);
+            super(null, null, null, null);
         }
 
         @Override
