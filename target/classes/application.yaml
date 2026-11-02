@@ -32,6 +32,12 @@ management:
     health:
       probes:
         enabled: true
+    prometheus:
+      access: unrestricted
+  endpoints:
+    web:
+      exposure:
+        include: health,prometheus
   health:
     livenessstate:
       enabled: true
@@ -43,7 +49,3 @@ no.nav.security.jwt:
     azuread:
       accepted_audience: ${AZURE_APP_CLIENT_ID}
       discoveryurl:  ${AZURE_APP_WELL_KNOWN_URL}
-
-  #todo: Skal disse med?
-  #management.endpoints.web.exposure.include=health,prometheus
-  #management.endpoint.prometheus.access=unrestricted

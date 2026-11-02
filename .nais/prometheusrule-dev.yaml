@@ -1,0 +1,120 @@
+apiVersion: "monitoring.coreos.com/v1"
+kind: PrometheusRule
+metadata:
+  name: hjelpemidler-api
+  namespace: team-oebs
+  labels:
+    team: team-oebs
+spec:
+  groups:
+    - name: hjelpemidler-api
+      rules:
+        - alert: HjelpemidlerApiJvmHeapPressure
+          expr: >
+            sum by(namespace, pod, container) (
+              jvm_memory_used_bytes{area="heap", namespace="team-oebs", container="hjelpemidler-api"}
+            )
+            /
+            sum by(namespace, pod, container) (
+              jvm_memory_max_bytes{area="heap", namespace="team-oebs", container="hjelpemidler-api"} > 0
+            )
+            > 0.85
+          for: 5m
+          annotations:
+            summary: "JVM heap usage is above 85% ({{ $value | humanizePercentage }})"
+            consequence: "Risk of OutOfMemoryError and pod crash"
+            action: "Check memory usage and consider increasing memory limits"
+            sla: "Respond within 1 hour during business hours"
+          labels:
+            severity: warning
+            alert_routing_slack: team-oebs-alerts-dev
+            alert_type: custom
+
+        - alert: HjelpemidlerApiDatabaseConnectionsPending
+          expr: hikaricp_connections_pending{namespace="team-oebs", container="hjelpemidler-api"} > 0
+          for: 2m
+          annotations:
+            summary: "Database connections are queued ({{ $value }} pending)"
+            consequence: "Requests may be delayed while waiting for an Oracle connection"
+            action: "Check Oracle availability and HikariCP configuration"
+            sla: "Respond within 15 minutes"
+          labels:
+            severity: warning
+            alert_routing_slack: team-oebs-alerts-dev
+            alert_type: custom
+
+        - alert: HjelpemidlerApiPodRestarts
+          expr: increase(kube_pod_container_status_restarts_total{namespace="team-oebs", container="hjelpemidler-api"}[1h]) > 3
+          for: 0m
+          annotations:
+            summary: "Pod has restarted {{ $value }} times in the last hour"
+            consequence: "Repeated restarts may interrupt requests"
+            action: "Check pod logs for the cause of the crashes"
+            sla: "Respond within 30 minutes during business hours"
+          labels:
+            severity: warning
+            alert_routing_slack: team-oebs-alerts-dev
+            alert_type: custom
+
+        - alert: HjelpemidlerApiErrorLogsHigh
+          expr: increase(logback_events_total{level="error", namespace="team-oebs", container="hjelpemidler-api"}[5m]) > 3
+          for: 2m
+          annotations:
+            summary: "High rate of ERROR log messages ({{ $value }} in last 5 min)"
+            consequence: "Application operations may be failing"
+            action: "Check application logs for the cause of the errors"
+            sla: "Respond within 1 hour during business hours"
+          labels:
+            severity: warning
+            alert_routing_slack: team-oebs-alerts-dev
+            alert_type: custom
+
+        - alert: HjelpemidlerApiInstanceDown
+          expr: kube_deployment_status_replicas_available{namespace="team-oebs", deployment="hjelpemidler-api"} == 0
+          for: 10m
+          annotations:
+            summary: "hjelpemidler-api has no available replicas"
+            consequence: "hjelpemidler-api is not available"
+            action: "Check deployment status and inspect the pods and their logs"
+          labels:
+            severity: warning
+            alert_routing_slack: team-oebs-alerts-dev
+            alert_type: custom
+
+        - alert: HjelpemidlerApiHigh4xxRate
+          expr: |
+            (
+              sum(rate(http_server_requests_seconds_count{namespace="team-oebs", app="hjelpemidler-api", uri=~"/bruker/\\{brukernummer\\}/(adresser|brukerpass|status)|/bruker/oppslag", status=~"4.."}[5m]))
+              /
+              clamp_min(sum(rate(http_server_requests_seconds_count{namespace="team-oebs", app="hjelpemidler-api", uri=~"/bruker/\\{brukernummer\\}/(adresser|brukerpass|status)|/bruker/oppslag"}[5m])), 0.1)
+            ) > 0.25
+            and
+            sum(rate(http_server_requests_seconds_count{namespace="team-oebs", app="hjelpemidler-api", uri=~"/bruker/\\{brukernummer\\}/(adresser|brukerpass|status)|/bruker/oppslag"}[5m])) > 0.2
+          for: 10m
+          annotations:
+            summary: "hjelpemidler-api has a high 4xx rate on business endpoints"
+            consequence: "Clients are receiving client-error responses"
+            action: "Check request errors and recent changes to clients or the API"
+          labels:
+            severity: warning
+            alert_routing_slack: team-oebs-alerts-dev
+            alert_type: custom
+
+        - alert: HjelpemidlerApiHighErrorRate
+          expr: |
+            (
+              sum(rate(http_server_requests_seconds_count{namespace="team-oebs", app="hjelpemidler-api", uri=~"/bruker/\\{brukernummer\\}/(adresser|brukerpass|status)|/bruker/oppslag", status=~"5.."}[5m]))
+              /
+              clamp_min(sum(rate(http_server_requests_seconds_count{namespace="team-oebs", app="hjelpemidler-api", uri=~"/bruker/\\{brukernummer\\}/(adresser|brukerpass|status)|/bruker/oppslag"}[5m])), 0.1)
+            ) > 0.05
+            and
+            sum(rate(http_server_requests_seconds_count{namespace="team-oebs", app="hjelpemidler-api", uri=~"/bruker/\\{brukernummer\\}/(adresser|brukerpass|status)|/bruker/oppslag"}[5m])) > 0.5
+          for: 10m
+          annotations:
+            summary: "hjelpemidler-api has a high 5xx rate on business endpoints"
+            consequence: "Clients are receiving server-error responses"
+            action: "Check errors in logs and traces for failed requests"
+          labels:
+            severity: warning
+            alert_routing_slack: team-oebs-alerts-dev
+            alert_type: custom
