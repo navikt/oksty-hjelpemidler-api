@@ -1,14 +1,18 @@
 package no.navn.oebs.hjelpemiddel.api.mapper;
 
+import no.navn.oebs.hjelpemiddel.api.dto.BrukerInfoRespons;
+import no.navn.oebs.hjelpemiddel.api.dto.BrukerpassRespons;
 import no.navn.oebs.hjelpemiddel.api.repository.entity.BrukerAdresseEntity;
-import no.navn.oebs.hjelpemiddel.api.repository.entity.BrukerPassEntity;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.openapitools.model.Adresser;
 import org.openapitools.model.Brukerpass;
 import org.openapitools.model.Status;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -29,8 +33,8 @@ class BrukerMapperTest {
 
     @Test
     void shouldMapPrimaryAndSecondaryAddresses() {
-        BrukerAdresseEntity primary = createAdresseEntity("Y", "A", "A");
-        BrukerAdresseEntity secondary = createAdresseEntity("N", "A", "A");
+        BrukerAdresseEntity primary = createAdresseEntity("Y");
+        BrukerAdresseEntity secondary = createAdresseEntity("N");
 
         Adresser result = brukerMapper.toAdresser(List.of(primary, secondary));
 
@@ -41,32 +45,30 @@ class BrukerMapperTest {
         assertThat(result.getAdresser().getFirst().getBostedsadresse().getGateadresse()).isEqualTo("Storgata 1");
     }
 
-    @Test
-    void shouldMapActiveStatusWhenBothFieldsAreA() {
-        BrukerAdresseEntity entity = createAdresseEntity("N", "A", "A");
+    @ParameterizedTest
+    @CsvSource({
+            "Aktiv, A, true",
+            "Aktiv, I, true",
+            "Inaktiv, A, false",
+            "Inaktiv, I, false"
+    })
+    void shouldMapStatusFromBrukerstatus(String brukerstatus, String fnrstatus, boolean expectedActive) {
+        BrukerInfoRespons respons = new BrukerInfoRespons("123", brukerstatus, "fnr", fnrstatus, null);
 
-        Status status = brukerMapper.toStatus(entity);
+        Status status = brukerMapper.toStatus(respons);
 
-        assertThat(status.getAktiv()).isTrue();
-    }
-
-    @Test
-    void shouldMapInactiveStatusWhenAnyFieldIsNotA() {
-        BrukerAdresseEntity entity = createAdresseEntity("N", "I", "A");
-
-        Status status = brukerMapper.toStatus(entity);
-
-        assertThat(status.getAktiv()).isFalse();
+        assertThat(status.getAktiv()).isEqualTo(expectedActive);
     }
 
     @Test
     void shouldMapBrukerpassFieldsAndDates() {
-        BrukerPassEntity passEntity = new BrukerPassEntity();
-        ReflectionTestUtils.setField(passEntity, "kontraktNr", "K-123");
-        ReflectionTestUtils.setField(passEntity, "startDate", "2026-01-15 11:00:00");
-        ReflectionTestUtils.setField(passEntity, "endDate", "2026-12-31 23:59:59");
+        BrukerpassRespons respons = new BrukerpassRespons(
+                "fnr", "123", "K-123", "Kontroll",
+                LocalDateTime.of(2026, 1, 15, 11, 0),
+                LocalDateTime.of(2026, 12, 31, 23, 59, 59),
+                "Aktiv");
 
-        Brukerpass brukerpass = brukerMapper.toBrukerpass(passEntity);
+        Brukerpass brukerpass = brukerMapper.toBrukerpass(respons);
 
         assertThat(brukerpass.getKontraktnr()).isEqualTo("K-123");
         assertThat(brukerpass.getStartdato()).isEqualTo(LocalDate.of(2026, 1, 15));
@@ -74,19 +76,30 @@ class BrukerMapperTest {
     }
 
     @Test
-    void shouldReturnNullDateWhenDateStringIsNullOrEmpty() {
-        assertThat(brukerMapper.toLocalDate(null)).isNull();
-        assertThat(brukerMapper.toLocalDate("")).isNull();
+    void shouldMapBrukerpassWhenStartDateIsNull() {
+        BrukerpassRespons respons = new BrukerpassRespons(
+                "fnr", "123", "K-123", "Kontroll",
+                null, LocalDateTime.of(2026, 12, 31, 23, 59, 59), "Aktiv");
+
+        Brukerpass brukerpass = brukerMapper.toBrukerpass(respons);
+
+        assertThat(brukerpass.getStartdato()).isNull();
+        assertThat(brukerpass.getSluttdato()).isEqualTo(LocalDate.of(2026, 12, 31));
     }
 
     @Test
-    void shouldParseLocalDateFromTimestamp() {
-        LocalDate date = brukerMapper.toLocalDate("2025-09-10 08:30:00");
+    void shouldMapBrukerpassWhenEndDateIsNull() {
+        BrukerpassRespons respons = new BrukerpassRespons(
+                "fnr", "123", "K-123", "Kontroll",
+                LocalDateTime.of(2026, 1, 15, 11, 0), null, "Aktiv");
 
-        assertThat(date).isEqualTo(LocalDate.of(2025, 9, 10));
+        Brukerpass brukerpass = brukerMapper.toBrukerpass(respons);
+
+        assertThat(brukerpass.getStartdato()).isEqualTo(LocalDate.of(2026, 1, 15));
+        assertThat(brukerpass.getSluttdato()).isNull();
     }
 
-    private BrukerAdresseEntity createAdresseEntity(String primary, String statusBrukernr, String statusFnr) {
+    private BrukerAdresseEntity createAdresseEntity(String primary) {
         BrukerAdresseEntity entity = new BrukerAdresseEntity();
         ReflectionTestUtils.setField(entity, "adresse", "Storgata 1");
         ReflectionTestUtils.setField(entity, "postNr", "0123");
@@ -98,8 +111,6 @@ class BrukerMapperTest {
         ReflectionTestUtils.setField(entity, "leveringsKommune", "0301");
         ReflectionTestUtils.setField(entity, "leveringsBydel", "Sentrum");
         ReflectionTestUtils.setField(entity, "primaerAdr", primary);
-        ReflectionTestUtils.setField(entity, "statusBrukernr", statusBrukernr);
-        ReflectionTestUtils.setField(entity, "statusFnr", statusFnr);
         return entity;
     }
 }

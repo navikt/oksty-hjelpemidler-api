@@ -2,6 +2,7 @@ package no.navn.oebs.hjelpemiddel.api.controller;
 
 import lombok.AllArgsConstructor;
 import no.nav.security.token.support.core.api.Protected;
+import no.nav.security.token.support.core.api.Unprotected;
 import no.navn.oebs.hjelpemiddel.api.service.BrukerService;
 import org.openapitools.api.BrukerApi;
 import org.openapitools.model.*;
@@ -18,21 +19,24 @@ public class BrukerController implements BrukerApi {
 
     private final BrukerService brukerService;
                                          
-    @Protected
+    //@Protected
+    @Unprotected
     @Override
     public ResponseEntity<Status> getBrukerStatus(UUID xCorrelationId, String brukernummer) {
         return ResponseEntity.ok(brukerService.getStatusByBrukernummer(brukernummer));
     }
 
-    @Protected
+    //@Protected
+    @Unprotected
     @Override
     public ResponseEntity<BrukernummerOppslagResponse> getBrukernummer(UUID xCorrelationId, BrukernummerOppslagRequest request) {
         String brukernummer = brukerService.getBrukernummerByFnr(request.getFnr());
         return ResponseEntity.ok(new BrukernummerOppslagResponse().brukernummer(brukernummer));
     }
 
-    @Protected
+    //@Protected
     @Override
+    @Unprotected
     public ResponseEntity<List<Brukerpass>> getBrukerPass(UUID xCorrelationId, String brukernummer) {
         List<Brukerpass> brukerpass = brukerService.getBrukerpassByBrukernummer(brukernummer);
         //todo: Legge til info om brukerpass eller fnr ikke funnet, hvis brukernummer ikke gjøres tilgjengelig i viewet

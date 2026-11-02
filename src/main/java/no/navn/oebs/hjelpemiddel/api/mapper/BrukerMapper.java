@@ -1,13 +1,12 @@
 package no.navn.oebs.hjelpemiddel.api.mapper;
 
+import no.navn.oebs.hjelpemiddel.api.dto.BrukerInfoRespons;
+import no.navn.oebs.hjelpemiddel.api.dto.BrukerpassRespons;
 import no.navn.oebs.hjelpemiddel.api.repository.entity.BrukerAdresseEntity;
-import no.navn.oebs.hjelpemiddel.api.repository.entity.BrukerPassEntity;
 import org.openapitools.model.*;
 import org.springframework.stereotype.Component;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.List;
 
 @Component
@@ -32,9 +31,8 @@ public class BrukerMapper {
         return adresser;
     }
 
-    public Status toStatus(BrukerAdresseEntity adresse) {
-        //todo: Skal aktiv være en eller to parametre?
-        return new Status().aktiv(isActive(adresse));
+    public Status toStatus(BrukerInfoRespons brukerInfoRespons){
+        return new Status().aktiv(brukerInfoRespons.brukerStatus().equals("Aktiv"));
     }
 
     public Personadresse toPersonadresse(BrukerAdresseEntity adresse) {
@@ -60,25 +58,13 @@ public class BrukerMapper {
                 .bydel(adresse.getLeveringsBydel());
     }
 
-    public boolean isActive(BrukerAdresseEntity brukerAdresse) {
-        String activeStatus = "A"; // "A"  from OeBS indicates active status
-        return brukerAdresse.getStatusBrukernr().equals(activeStatus)
-                && brukerAdresse.getStatusFnr().equals(activeStatus);
+    public Brukerpass toBrukerpass(BrukerpassRespons brukerpassRespons){
+        LocalDateTime endDate = brukerpassRespons.endDate();
+        LocalDateTime startDate = brukerpassRespons.startDate();
+        return new Brukerpass().
+                kontraktnr(brukerpassRespons.kontraktNr())
+                .startdato(startDate == null ? null : startDate.toLocalDate())
+                .sluttdato(endDate == null ? null : endDate.toLocalDate());
     }
 
-    public Brukerpass toBrukerpass(BrukerPassEntity brukerPass){
-        return new Brukerpass()
-                .kontraktnr(brukerPass.getKontraktNr())
-                .startdato(toLocalDate(brukerPass.getStartDate()))
-                .sluttdato(toLocalDate(brukerPass.getEndDate()));
-    }
-
-
-    public LocalDate toLocalDate(String dateString) {
-        if (dateString == null || dateString.isEmpty()) {
-            return null;
-        }
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
-        return LocalDateTime.parse(dateString, formatter).toLocalDate();
-    }
 }
