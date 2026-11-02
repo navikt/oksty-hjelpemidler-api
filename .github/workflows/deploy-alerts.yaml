@@ -1,0 +1,28 @@
+name: Deploy alerts to NAIS for hjelpemidler-api
+concurrency:
+  group: deploy-alerts-dev
+  cancel-in-progress: false
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - .nais/alertconfig-dev.yaml
+      - .nais/prometheusrule-dev.yaml
+      - .github/workflows/deploy-alerts.yaml
+
+jobs:
+  deploy-dev:
+    name: Deploy alerts to dev-gcp
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - name: Deploy alerts to dev-gcp
+        uses: nais/deploy/actions/deploy@027a91857992525139798892f2804b0ca21f4af6
+        env:
+          CLUSTER: dev-gcp
+          RESOURCE: .nais/alertconfig-dev.yaml,.nais/prometheusrule-dev.yaml
