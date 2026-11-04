@@ -54,5 +54,5 @@ jobs:
         uses: nais/deploy/actions/deploy@1064e26587ab2794266a35f477387e561899a7ef
         env:
           CLUSTER: dev-gcp
-          RESOURCE: .nais/nais-dependabot.yaml
+          RESOURCE: .nais/app-dependabot.yaml
           VAR: image=${{ steps.docker-build-push.outputs.image }}
