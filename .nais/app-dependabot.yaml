@@ -9,7 +9,7 @@ spec:
   image: {{image}}
   port: 8080
 
-  ttl: 7
+  ttl: 7m
 
   azure:
     application:
