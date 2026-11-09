@@ -22,8 +22,8 @@ public interface BrukerAdresseJpaRepository extends JpaRepository<BrukerAdresseE
     @Query(value = """
             SELECT *
             FROM APPS.XXRTV_DIGIHOT_OEBS_ADR_FNR_V
-            WHERE bruker_nummer = :bruker_nummer
+            WHERE fnr = :fnr
              """, nativeQuery = true)
-    List<BrukerAdresseEntity> getBrukerAdresseByBrukernummer(@Param("bruker_nummer") String brukerNr);
+    List<BrukerAdresseEntity> getBrukerAdresseByFnr(@Param("fnr") String fnr);
 
 }

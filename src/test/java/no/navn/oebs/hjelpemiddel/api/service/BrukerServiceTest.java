@@ -14,8 +14,8 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.openapitools.model.Adresser;
+import org.openapitools.model.Bruker;
 import org.openapitools.model.Brukerpass;
-import org.openapitools.model.Status;
 
 import java.util.List;
 
@@ -43,79 +43,50 @@ class BrukerServiceTest {
     private BrukerService brukerService;
 
     @Test
-    void shouldReturnStatusWhenBrukernummerExists() {
-        BrukerInfoRespons respons = new BrukerInfoRespons("123", "Aktiv", "fnr", "A", null);
-        Status expectedStatus = new Status().aktiv(true);
-
-        when(brukerAdresseJpaRepository.getFnrByBrukernummer("123")).thenReturn(List.of("fnr"));
-        when(brukerinfoProcedure.executeBrukerinfoProcedure("fnr")).thenReturn(respons);
-        when(brukerMapper.toStatus(respons)).thenReturn(expectedStatus);
-
-        Status actual = brukerService.getStatusByBrukernummer("123");
-
-        assertThat(actual).isEqualTo(expectedStatus);
-        verify(brukerinfoProcedure).executeBrukerinfoProcedure("fnr");
-        verify(brukerMapper).toStatus(respons);
-    }
-
-    @Test
-    void shouldThrowWhenFnrMissingForStatusLookup() {
-        when(brukerAdresseJpaRepository.getFnrByBrukernummer("123")).thenReturn(List.of());
-
-        assertThatThrownBy(() -> brukerService.getStatusByBrukernummer("123"))
-                .isInstanceOf(ResourceNotFoundException.class)
-                .hasMessage("No status found for the given brukernummer");
-    }
-
-    @Test
-    void shouldThrowWhenBrukerinfoNotFoundForStatusLookup() {
-        when(brukerAdresseJpaRepository.getFnrByBrukernummer("123")).thenReturn(List.of("fnr"));
-        when(brukerinfoProcedure.executeBrukerinfoProcedure("fnr")).thenReturn(null);
-
-        assertThatThrownBy(() -> brukerService.getStatusByBrukernummer("123"))
-                .isInstanceOf(ResourceNotFoundException.class)
-                .hasMessage("No status found for the given brukernummer");
-    }
-
-    @Test
-    void shouldReturnAdresserWhenBrukernummerExists() {
+    void shouldReturnAdresserWhenFnrExists() {
         BrukerAdresseEntity entity = new BrukerAdresseEntity();
         Adresser expectedAdresser = new Adresser();
         List<BrukerAdresseEntity> entities = List.of(entity);
 
-        when(brukerAdresseJpaRepository.getBrukerAdresseByBrukernummer("123")).thenReturn(entities);
+        when(brukerAdresseJpaRepository.getBrukerAdresseByFnr("fnr")).thenReturn(entities);
         when(brukerMapper.toAdresser(entities)).thenReturn(expectedAdresser);
 
-        Adresser actual = brukerService.getAdresserByBrukernummer("123");
+        Adresser actual = brukerService.getAdresserByFnr("fnr");
 
         assertThat(actual).isEqualTo(expectedAdresser);
+        verify(brukerAdresseJpaRepository).getBrukerAdresseByFnr("fnr");
+        verify(brukerMapper).toAdresser(entities);
     }
 
     @Test
     void shouldThrowWhenAdresserNotFound() {
-        when(brukerAdresseJpaRepository.getBrukerAdresseByBrukernummer("123")).thenReturn(List.of());
+        when(brukerAdresseJpaRepository.getBrukerAdresseByFnr("fnr")).thenReturn(List.of());
 
-        assertThatThrownBy(() -> brukerService.getAdresserByBrukernummer("123"))
+        assertThatThrownBy(() -> brukerService.getAdresserByFnr("fnr"))
                 .isInstanceOf(ResourceNotFoundException.class)
                 .hasMessage("No addresses found for the given brukernummer");
     }
 
     @Test
-    void shouldReturnBrukernummerWhenFnrExists() {
+    void shouldReturnBrukerWhenFnrExists() {
         BrukerInfoRespons respons = new BrukerInfoRespons("123", "Aktiv", "fnr", "A", null);
+        Bruker expectedBruker = new Bruker().brukernummer("123").aktiv(true);
+
         when(brukerinfoProcedure.executeBrukerinfoProcedure("fnr")).thenReturn(respons);
+        when(brukerMapper.toBruker(respons)).thenReturn(expectedBruker);
 
-        String actual = brukerService.getBrukernummerByFnr("fnr");
+        Bruker actual = brukerService.getBrukerByFnr("fnr");
 
-        assertThat(actual).isEqualTo("123");
+        assertThat(actual).isEqualTo(expectedBruker);
         verify(brukerinfoProcedure).executeBrukerinfoProcedure("fnr");
+        verify(brukerMapper).toBruker(respons);
     }
 
     @Test
-    void shouldThrowWhenBrukernummerNotFoundForFnr() {
+    void shouldThrowWhenBrukerNotFoundForFnr() {
         when(brukerinfoProcedure.executeBrukerinfoProcedure("fnr")).thenReturn(null);
 
-        assertThatThrownBy(() -> brukerService.getBrukernummerByFnr("fnr"))
+        assertThatThrownBy(() -> brukerService.getBrukerByFnr("fnr"))
                 .isInstanceOf(ResourceNotFoundException.class)
                 .hasMessage("No brukernummer found for the given fødselsnummer");
     }
@@ -144,11 +115,10 @@ class BrukerServiceTest {
                 "fnr", "123", "K-123", "Kontroll", null, null, "Aktiv");
         Brukerpass mapped = new Brukerpass();
 
-        when(brukerAdresseJpaRepository.getFnrByBrukernummer("123")).thenReturn(List.of("fnr"));
         when(brukerpassProcedure.executeBrukerpassProcedure("fnr")).thenReturn(respons);
         when(brukerMapper.toBrukerpass(respons)).thenReturn(mapped);
 
-        List<Brukerpass> actual = brukerService.getBrukerpassByBrukernummer("123");
+        List<Brukerpass> actual = brukerService.getBrukerpassByFnr("fnr");
 
         assertThat(actual).containsExactly(mapped);
         verify(brukerpassProcedure).executeBrukerpassProcedure("fnr");
@@ -156,20 +126,10 @@ class BrukerServiceTest {
     }
 
     @Test
-    void shouldThrowWhenFnrMissingForBrukerpassLookup() {
-        when(brukerAdresseJpaRepository.getFnrByBrukernummer("123")).thenReturn(List.of());
-
-        assertThatThrownBy(() -> brukerService.getBrukerpassByBrukernummer("123"))
-                .isInstanceOf(ResourceNotFoundException.class)
-                .hasMessage("No brukerpass found for the given brukernummer");
-    }
-
-    @Test
     void shouldThrowWhenBrukerpassResponseIsNull() {
-        when(brukerAdresseJpaRepository.getFnrByBrukernummer("123")).thenReturn(List.of("fnr"));
         when(brukerpassProcedure.executeBrukerpassProcedure("fnr")).thenReturn(null);
 
-        assertThatThrownBy(() -> brukerService.getBrukerpassByBrukernummer("123"))
+        assertThatThrownBy(() -> brukerService.getBrukerpassByFnr("fnr"))
                 .isInstanceOf(ResourceNotFoundException.class)
                 .hasMessage("No brukerpass found for the given brukernummer");
     }

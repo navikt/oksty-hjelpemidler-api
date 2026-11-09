@@ -31,8 +31,10 @@ public class BrukerMapper {
         return adresser;
     }
 
-    public Status toStatus(BrukerInfoRespons brukerInfoRespons){
-        return new Status().aktiv(brukerInfoRespons.brukerStatus().equals("Aktiv"));
+    public Bruker toBruker(BrukerInfoRespons brukerInfoRespons) {
+        return new Bruker()
+                .aktiv(brukerInfoRespons.brukerStatus().equals("Aktiv"))
+                .brukernummer(brukerInfoRespons.brukerNr());
     }
 
     public Personadresse toPersonadresse(BrukerAdresseEntity adresse) {
