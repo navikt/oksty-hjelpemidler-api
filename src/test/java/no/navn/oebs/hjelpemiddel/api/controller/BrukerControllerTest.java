@@ -4,9 +4,9 @@ import no.nav.security.token.support.spring.test.EnableMockOAuth2Server;
 import no.navn.oebs.hjelpemiddel.api.service.BrukerService;
 import org.junit.jupiter.api.Test;
 import org.openapitools.model.Adresser;
-import org.openapitools.model.BrukernummerOppslagRequest;
+import org.openapitools.model.Bruker;
 import org.openapitools.model.Brukerpass;
-import org.openapitools.model.Status;
+import org.openapitools.model.FnrRequestBody;
 
 import java.util.List;
 import java.util.UUID;
@@ -20,51 +20,45 @@ class BrukerControllerTest {
     private final BrukerController controller = new BrukerController(brukerService);
 
     @Test
-    void shouldReturnStatusFromService() {
-        brukerService.status = new Status().aktiv(true);
+    void shouldReturnBrukerFromService() {
+        FnrRequestBody request = new FnrRequestBody("12345678910");
+        brukerService.bruker = new Bruker();
 
-        var response = controller.getBrukerStatus(UUID.randomUUID(), "123");
-
-        assertThat(response.getStatusCode().value()).isEqualTo(200);
-        assertThat(response.getBody()).isEqualTo(brukerService.status);
-    }
-
-    @Test
-    void shouldReturnBrukernummerFromService() {
-        BrukernummerOppslagRequest request = new BrukernummerOppslagRequest("12345678910");
-        brukerService.brukernummer = "555";
-
-        var response = controller.getBrukernummer(UUID.randomUUID(), request);
+        var response = controller.getBruker(UUID.randomUUID(), request);
 
         assertThat(response.getStatusCode().value()).isEqualTo(200);
-        assertThat(response.getBody()).isNotNull();
-        assertThat(response.getBody().getBrukernummer()).isEqualTo("555");
+        assertThat(response.getBody()).isEqualTo(brukerService.bruker);
+        assertThat(brukerService.fnr).isEqualTo(request.getFnr());
     }
 
     @Test
     void shouldReturnBrukerpassFromService() {
+        FnrRequestBody request = new FnrRequestBody("12345678910");
         Brukerpass pass = new Brukerpass().kontraktnr("K-1");
         brukerService.brukerpass = List.of(pass);
 
-        var response = controller.getBrukerPass(UUID.randomUUID(), "123");
+        var response = controller.getBrukerPass(UUID.randomUUID(), request);
 
         assertThat(response.getStatusCode().value()).isEqualTo(200);
         assertThat(response.getBody()).containsExactly(pass);
+        assertThat(brukerService.fnr).isEqualTo(request.getFnr());
     }
 
     @Test
     void shouldReturnAdresserFromService() {
+        FnrRequestBody request = new FnrRequestBody("12345678910");
         brukerService.adresser = new Adresser();
 
-        var response = controller.getAdresser(UUID.randomUUID(), "123");
+        var response = controller.getAdresser(UUID.randomUUID(), request);
 
         assertThat(response.getStatusCode().value()).isEqualTo(200);
         assertThat(response.getBody()).isEqualTo(brukerService.adresser);
+        assertThat(brukerService.fnr).isEqualTo(request.getFnr());
     }
 
     private static class StubBrukerService extends BrukerService {
-        private Status status;
-        private String brukernummer;
+        private String fnr;
+        private Bruker bruker;
         private List<Brukerpass> brukerpass;
         private Adresser adresser;
 
@@ -73,22 +67,20 @@ class BrukerControllerTest {
         }
 
         @Override
-        public Status getStatusByBrukernummer(String brukernummer) {
-            return status;
+        public Bruker getBrukerByFnr(String fnr) {
+            this.fnr = fnr;
+            return bruker;
         }
 
         @Override
-        public String getBrukernummerByFnr(String fnr) {
-            return brukernummer;
-        }
-
-        @Override
-        public List<Brukerpass> getBrukerpassByBrukernummer(String brukernummer) {
+        public List<Brukerpass> getBrukerpassByFnr(String fnr) {
+            this.fnr = fnr;
             return brukerpass;
         }
 
         @Override
-        public Adresser getAdresserByBrukernummer(String brukernummer) {
+        public Adresser getAdresserByFnr(String fnr) {
+            this.fnr = fnr;
             return adresser;
         }
     }

@@ -17,32 +17,24 @@ import java.util.UUID;
 public class BrukerController implements BrukerApi {
 
     private final BrukerService brukerService;
-                                         
+
     @Protected
     @Override
-    public ResponseEntity<Status> getBrukerStatus(UUID xCorrelationId, String brukernummer) {
-        return ResponseEntity.ok(brukerService.getStatusByBrukernummer(brukernummer));
+    public ResponseEntity<Bruker> getBruker(UUID xCorrelationId, FnrRequestBody request) {
+        Bruker bruker = brukerService.getBrukerByFnr(request.getFnr());
+        return ResponseEntity.ok(bruker);
     }
 
     @Protected
     @Override
-    public ResponseEntity<BrukernummerOppslagResponse> getBrukernummer(UUID xCorrelationId, BrukernummerOppslagRequest request) {
-        String brukernummer = brukerService.getBrukernummerByFnr(request.getFnr());
-        return ResponseEntity.ok(new BrukernummerOppslagResponse().brukernummer(brukernummer));
-    }
-
-    @Protected
-    @Override
-    public ResponseEntity<List<Brukerpass>> getBrukerPass(UUID xCorrelationId, String brukernummer) {
-        List<Brukerpass> brukerpass = brukerService.getBrukerpassByBrukernummer(brukernummer);
-        //todo: Legge til info om brukerpass eller fnr ikke funnet, hvis brukernummer ikke gjøres tilgjengelig i viewet
-        //todo: Skal det returners 200 eller 404 hvis det ikke finnes brukerpass for brukernummeret? Hvis 200, skal det returneres en tom liste eller null?
+    public ResponseEntity<List<Brukerpass>> getBrukerPass(UUID xCorrelationId, FnrRequestBody request) {
+        List<Brukerpass> brukerpass = brukerService.getBrukerpassByFnr(request.getFnr());
         return ResponseEntity.ok(brukerpass);
     }
 
     @Protected
     @Override
-    public ResponseEntity<Adresser> getAdresser(UUID xCorrelationId, String brukernummer){
-        return ResponseEntity.ok(brukerService.getAdresserByBrukernummer(brukernummer));
+    public ResponseEntity<Adresser> getAdresser(UUID xCorrelationId, FnrRequestBody request){
+        return ResponseEntity.ok(brukerService.getAdresserByFnr(request.getFnr()));
     }
 }

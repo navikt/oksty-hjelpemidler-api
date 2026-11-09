@@ -10,7 +10,7 @@ import no.navn.oebs.hjelpemiddel.api.repository.BrukerinfoProcedure;
 import no.navn.oebs.hjelpemiddel.api.repository.BrukerpassProcedure;
 import no.navn.oebs.hjelpemiddel.api.repository.entity.BrukerAdresseEntity;
 import org.openapitools.model.Adresser;
-import org.openapitools.model.Status;
+import org.openapitools.model.Bruker;
 import org.openapitools.model.Brukerpass;
 import org.springframework.stereotype.Service;
 
@@ -25,33 +25,20 @@ public class BrukerService {
     private final BrukerpassProcedure brukerpassProcedure;
     private final BrukerinfoProcedure brukerinfoProcedure;
 
-    public Status getStatusByBrukernummer(String brukernummer) {
-        String fnr = getFnrByBrukernummer(brukernummer);
-        if (fnr == null) {
-            //todo: Dette er vel egentlig en internal server error, siden problemet er at vi ikke klarer å få hentet ut fnr
-            throw new ResourceNotFoundException("No status found for the given brukernummer");
-        }
-        BrukerInfoRespons respons = brukerinfoProcedure.executeBrukerinfoProcedure(fnr);
-        if (respons == null) {
-            throw new ResourceNotFoundException("No status found for the given brukernummer");
-        }
-        return brukerMapper.toStatus(respons);
-    }
-
-    public Adresser getAdresserByBrukernummer(String brukernummer) {
-        List<BrukerAdresseEntity> brukerAdresseEntityList = brukerAdresseJpaRepository.getBrukerAdresseByBrukernummer(brukernummer);
+    public Adresser getAdresserByFnr(String fnr) {
+        List<BrukerAdresseEntity> brukerAdresseEntityList = brukerAdresseJpaRepository.getBrukerAdresseByFnr(fnr);
         if (brukerAdresseEntityList.isEmpty()) {
             throw new ResourceNotFoundException("No addresses found for the given brukernummer");
         }
         return brukerMapper.toAdresser(brukerAdresseEntityList);
     }
 
-    public String getBrukernummerByFnr(String fnr) {
+    public Bruker getBrukerByFnr(String fnr) {
         BrukerInfoRespons response = brukerinfoProcedure.executeBrukerinfoProcedure(fnr);
         if (response == null) {
             throw new ResourceNotFoundException("No brukernummer found for the given fødselsnummer");
         }
-        return response.brukerNr();
+        return brukerMapper.toBruker(response);
     }
 
     public String getFnrByBrukernummer(String brukernummer) {
@@ -59,12 +46,7 @@ public class BrukerService {
         return !fnrList.isEmpty() ? fnrList.getFirst() : null;
     }
 
-    public List<Brukerpass> getBrukerpassByBrukernummer(String brukernummer) {
-        String fnr = getFnrByBrukernummer(brukernummer);
-        if (fnr == null) {
-            throw new ResourceNotFoundException("No brukerpass found for the given brukernummer");
-        }
-
+    public List<Brukerpass> getBrukerpassByFnr(String fnr) {
         BrukerpassRespons respons = brukerpassProcedure.executeBrukerpassProcedure(fnr);
         if (respons == null) {
             throw new ResourceNotFoundException("No brukerpass found for the given brukernummer");

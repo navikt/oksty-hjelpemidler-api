@@ -7,8 +7,8 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.openapitools.model.Adresser;
+import org.openapitools.model.Bruker;
 import org.openapitools.model.Brukerpass;
-import org.openapitools.model.Status;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.time.LocalDate;
@@ -52,12 +52,13 @@ class BrukerMapperTest {
             "Inaktiv, A, false",
             "Inaktiv, I, false"
     })
-    void shouldMapStatusFromBrukerstatus(String brukerstatus, String fnrstatus, boolean expectedActive) {
+    void shouldMapBrukerFromBrukerinfo(String brukerstatus, String fnrstatus, boolean expectedActive) {
         BrukerInfoRespons respons = new BrukerInfoRespons("123", brukerstatus, "fnr", fnrstatus, null);
 
-        Status status = brukerMapper.toStatus(respons);
+        Bruker bruker = brukerMapper.toBruker(respons);
 
-        assertThat(status.getAktiv()).isEqualTo(expectedActive);
+        assertThat(bruker.getBrukernummer()).isEqualTo("123");
+        assertThat(bruker.getAktiv()).isEqualTo(expectedActive);
     }
 
     @Test
