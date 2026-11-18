@@ -64,4 +64,13 @@ public class BrukerAdresseEntity {
     @Column(name="status_fnr") //todo: Hva brukes denne til. Fnr går gjennom hele verien
     private String statusFnr;
 
+    @Column(name="status_adr_p_sted")
+    private String statusAdrPSted;
+
+    @Column(name="status_adr_c_sted")
+    private String statusAdrCSted;
+
+    @Column(name="status_adr_bruk")
+    private String statusAdrBruk;
+
 }

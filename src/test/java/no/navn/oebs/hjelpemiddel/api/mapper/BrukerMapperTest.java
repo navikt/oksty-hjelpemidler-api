@@ -6,6 +6,9 @@ import no.navn.oebs.hjelpemiddel.api.repository.entity.BrukerAdresseEntity;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.NullSource;
+import org.junit.jupiter.params.provider.ValueSource;
+import org.openapitools.model.Adresse;
 import org.openapitools.model.Adresser;
 import org.openapitools.model.Bruker;
 import org.openapitools.model.Brukerpass;
@@ -32,17 +35,125 @@ class BrukerMapperTest {
     }
 
     @Test
-    void shouldMapPrimaryAndSecondaryAddresses() {
-        BrukerAdresseEntity primary = createAdresseEntity("Y");
-        BrukerAdresseEntity secondary = createAdresseEntity("N");
+    void shouldMapFirstResidentialAddressAndAllDistinctDeliveryAddresses() {
+        BrukerAdresseEntity first = createAdresseEntity(
+                "N", "Storgata 1", "0123", "Oslo", "0301",
+                "Leveringsveien 2", "0456", "Oslo", "0301", "Sentrum");
+        BrukerAdresseEntity second = createAdresseEntity(
+                "Y", "Parkveien 9", "6789", "Bergen", "4601",
+                "Bryggeveien 4", "5432", "Bergen", "4601", "Nordnes");
 
-        Adresser result = brukerMapper.toAdresser(List.of(primary, secondary));
+        Adresser result = brukerMapper.toAdresser(List.of(first, second));
 
         assertThat(result).isNotNull();
-        assertThat(result.getPrimaeradresse()).isNotNull();
-        assertThat(result.getAdresser()).hasSize(1);
-        assertThat(result.getPrimaeradresse().getBostedsadresse().getGateadresse()).isEqualTo("Storgata 1");
-        assertThat(result.getAdresser().getFirst().getBostedsadresse().getGateadresse()).isEqualTo("Storgata 1");
+        assertThat(result.getBostedsadresse()).isNotNull();
+        assertThat(result.getLeveringsadresser()).hasSize(2);
+        assertThat(result.getBostedsadresse().getGateadresse()).isEqualTo("Storgata 1");
+        assertThat(result.getBostedsadresse().getPostnummer()).isEqualTo("0123");
+        assertThat(result.getBostedsadresse().getBy()).isEqualTo("Oslo");
+        assertThat(result.getBostedsadresse().getKommune()).isEqualTo("0301");
+        assertThat(result.getLeveringsadresser().get(0).getGateadresse()).isEqualTo("Leveringsveien 2");
+        assertThat(result.getLeveringsadresser().get(0).getPostnummer()).isEqualTo("0456");
+        assertThat(result.getLeveringsadresser().get(0).getBy()).isEqualTo("Oslo");
+        assertThat(result.getLeveringsadresser().get(0).getKommune()).isEqualTo("0301");
+        assertThat(result.getLeveringsadresser().get(0).getBydel()).isEqualTo("Sentrum");
+        assertThat(result.getLeveringsadresser().get(1).getGateadresse()).isEqualTo("Bryggeveien 4");
+        assertThat(result.getLeveringsadresser().get(1).getPostnummer()).isEqualTo("5432");
+        assertThat(result.getLeveringsadresser().get(1).getBy()).isEqualTo("Bergen");
+        assertThat(result.getLeveringsadresser().get(1).getKommune()).isEqualTo("4601");
+        assertThat(result.getLeveringsadresser().get(1).getBydel()).isEqualTo("Nordnes");
+    }
+
+    @ParameterizedTest
+    @NullSource
+    @ValueSource(strings = "Sentrum")
+    void shouldRemoveDuplicateDeliveryAddresses(String district) {
+        BrukerAdresseEntity first = createAdresseEntity(
+                "Y", "Storgata 1", "0123", "Oslo", "0301",
+                "Leveringsveien 2", "0456", "Oslo", "0301", district);
+        BrukerAdresseEntity duplicate = createAdresseEntity(
+                "N", "Parkveien 9", "6789", "Bergen", "4601",
+                "Leveringsveien 2", "0456", "Oslo", "0301", district);
+
+        Adresser result = brukerMapper.toAdresser(List.of(first, duplicate));
+
+        assertThat(result.getLeveringsadresser()).containsExactly(
+                new Adresse().gateadresse("Leveringsveien 2").postnummer("0456")
+                        .by("Oslo").kommune("0301").bydel(district));
+    }
+
+    @ParameterizedTest
+    @CsvSource({
+            "leveringsAdresse, Leveringsveien 3",
+            "leveringsPostNr, 0457",
+            "leveringsBy, Bergen",
+            "leveringsKommune, 4601",
+            "leveringsBydel,"
+    })
+    void shouldKeepDeliveryAddressesThatDifferInOneField(String field, String value) {
+        BrukerAdresseEntity first = createAdresseEntity(
+                "Y", "Storgata 1", "0123", "Oslo", "0301",
+                "Leveringsveien 2", "0456", "Oslo", "0301", "Sentrum");
+        BrukerAdresseEntity second = createAdresseEntity(
+                "N", "Storgata 1", "0123", "Oslo", "0301",
+                "Leveringsveien 2", "0456", "Oslo", "0301", "Sentrum");
+        ReflectionTestUtils.setField(second, field, value);
+
+        Adresser result = brukerMapper.toAdresser(List.of(first, second));
+
+        assertThat(result.getLeveringsadresser()).hasSize(2);
+        assertThat(result.getLeveringsadresser().getFirst()).isNotEqualTo(
+                result.getLeveringsadresser().getLast());
+    }
+
+    @Test
+    void shouldMapValidPrimaryBostedsadresse() {
+        BrukerAdresseEntity entity = createAdresseEntity(
+                "Y", "Storgata 1", "0123", "Oslo", "0301",
+                "Leveringsveien 2", "0456", "Oslo", "0301", "Sentrum");
+
+        Adresse result = brukerMapper.toValidBostedsadresse(entity);
+
+        assertThat(result.getGateadresse()).isEqualTo("Storgata 1");
+        assertThat(result.getPostnummer()).isEqualTo("0123");
+        assertThat(result.getBy()).isEqualTo("Oslo");
+        assertThat(result.getKommune()).isEqualTo("0301");
+    }
+
+    @ParameterizedTest
+    @CsvSource({
+            "primaerAdr, N",
+            "statusBrukernr, I",
+            "statusFnr, I",
+            "statusAdrPSted, I",
+            "statusAdrCSted, I",
+            "statusAdrBruk, I"
+    })
+    void shouldRejectBostedsadresseWhenNotPrimaryOrStatusInactive(String field, String value) {
+        BrukerAdresseEntity entity = createAdresseEntity(
+                "Y", "Storgata 1", "0123", "Oslo", "0301",
+                "Leveringsveien 2", "0456", "Oslo", "0301", "Sentrum");
+        ReflectionTestUtils.setField(entity, field, value);
+
+        assertThat(brukerMapper.toValidBostedsadresse(entity)).isNull();
+    }
+
+    @Test
+    void shouldReturnNullWhenBostedsadresseEntityIsNull() {
+        assertThat(brukerMapper.toValidBostedsadresse(null)).isNull();
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {
+            "statusBrukernr", "statusFnr", "statusAdrPSted", "statusAdrCSted", "statusAdrBruk"
+    })
+    void shouldRejectBostedsadresseWhenStatusIsNull(String field) {
+        BrukerAdresseEntity entity = createAdresseEntity(
+                "Y", "Storgata 1", "0123", "Oslo", "0301",
+                "Leveringsveien 2", "0456", "Oslo", "0301", "Sentrum");
+        ReflectionTestUtils.setField(entity, field, null);
+
+        assertThat(brukerMapper.toValidBostedsadresse(entity)).isNull();
     }
 
     @ParameterizedTest
@@ -100,18 +211,33 @@ class BrukerMapperTest {
         assertThat(brukerpass.getSluttdato()).isNull();
     }
 
-    private BrukerAdresseEntity createAdresseEntity(String primary) {
+    private BrukerAdresseEntity createAdresseEntity(
+            String primary,
+            String address,
+            String postNr,
+            String city,
+            String municipality,
+            String deliveryAddress,
+            String deliveryPostNr,
+            String deliveryCity,
+            String deliveryMunicipality,
+            String district) {
         BrukerAdresseEntity entity = new BrukerAdresseEntity();
-        ReflectionTestUtils.setField(entity, "adresse", "Storgata 1");
-        ReflectionTestUtils.setField(entity, "postNr", "0123");
-        ReflectionTestUtils.setField(entity, "by", "Oslo");
-        ReflectionTestUtils.setField(entity, "kommune", "0301");
-        ReflectionTestUtils.setField(entity, "leveringsAdresse", "Leveringsveien 2");
-        ReflectionTestUtils.setField(entity, "leveringsPostNr", "0456");
-        ReflectionTestUtils.setField(entity, "leveringsBy", "Oslo");
-        ReflectionTestUtils.setField(entity, "leveringsKommune", "0301");
-        ReflectionTestUtils.setField(entity, "leveringsBydel", "Sentrum");
+        ReflectionTestUtils.setField(entity, "adresse", address);
+        ReflectionTestUtils.setField(entity, "postNr", postNr);
+        ReflectionTestUtils.setField(entity, "by", city);
+        ReflectionTestUtils.setField(entity, "kommune", municipality);
+        ReflectionTestUtils.setField(entity, "leveringsAdresse", deliveryAddress);
+        ReflectionTestUtils.setField(entity, "leveringsPostNr", deliveryPostNr);
+        ReflectionTestUtils.setField(entity, "leveringsBy", deliveryCity);
+        ReflectionTestUtils.setField(entity, "leveringsKommune", deliveryMunicipality);
+        ReflectionTestUtils.setField(entity, "leveringsBydel", district);
         ReflectionTestUtils.setField(entity, "primaerAdr", primary);
+        ReflectionTestUtils.setField(entity, "statusBrukernr", "A");
+        ReflectionTestUtils.setField(entity, "statusFnr", "A");
+        ReflectionTestUtils.setField(entity, "statusAdrPSted", "A");
+        ReflectionTestUtils.setField(entity, "statusAdrCSted", "A");
+        ReflectionTestUtils.setField(entity, "statusAdrBruk", "A");
         return entity;
     }
 }

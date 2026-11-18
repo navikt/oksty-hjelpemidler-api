@@ -13,6 +13,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.openapitools.model.Adresse;
 import org.openapitools.model.Adresser;
 import org.openapitools.model.Bruker;
 import org.openapitools.model.Brukerpass;
@@ -48,23 +49,76 @@ class BrukerServiceTest {
         Adresser expectedAdresser = new Adresser();
         List<BrukerAdresseEntity> entities = List.of(entity);
 
-        when(brukerAdresseJpaRepository.getBrukerAdresseByFnr("fnr")).thenReturn(entities);
+        when(brukerAdresseJpaRepository.getBrukerAdresserByFnr("fnr")).thenReturn(entities);
         when(brukerMapper.toAdresser(entities)).thenReturn(expectedAdresser);
 
         Adresser actual = brukerService.getAdresserByFnr("fnr");
 
         assertThat(actual).isEqualTo(expectedAdresser);
-        verify(brukerAdresseJpaRepository).getBrukerAdresseByFnr("fnr");
+        verify(brukerAdresseJpaRepository).getBrukerAdresserByFnr("fnr");
         verify(brukerMapper).toAdresser(entities);
     }
 
     @Test
     void shouldThrowWhenAdresserNotFound() {
-        when(brukerAdresseJpaRepository.getBrukerAdresseByFnr("fnr")).thenReturn(List.of());
+        when(brukerAdresseJpaRepository.getBrukerAdresserByFnr("fnr")).thenReturn(List.of());
 
         assertThatThrownBy(() -> brukerService.getAdresserByFnr("fnr"))
                 .isInstanceOf(ResourceNotFoundException.class)
                 .hasMessage("No addresses found for the given brukernummer");
+    }
+
+    @Test
+    void shouldReturnUniqueValidBostedsadresseAndFilterInvalidAddresses() {
+        BrukerAdresseEntity validEntity = new BrukerAdresseEntity();
+        BrukerAdresseEntity invalidEntity = new BrukerAdresseEntity();
+        List<BrukerAdresseEntity> entities = List.of(validEntity, invalidEntity);
+        Adresse expectedAdresse = new Adresse().gateadresse("Storgata 1");
+
+        when(brukerAdresseJpaRepository.getBostedsadresseByFnr("fnr")).thenReturn(entities);
+        when(brukerMapper.toValidBostedsadresse(validEntity)).thenReturn(expectedAdresse);
+        when(brukerMapper.toValidBostedsadresse(invalidEntity)).thenReturn(null);
+
+        Adresse actual = brukerService.getBostedsadresseByFnr("fnr");
+
+        assertThat(actual).isSameAs(expectedAdresse);
+        verify(brukerAdresseJpaRepository).getBostedsadresseByFnr("fnr");
+        verify(brukerMapper).toValidBostedsadresse(validEntity);
+        verify(brukerMapper).toValidBostedsadresse(invalidEntity);
+    }
+
+    @Test
+    void shouldThrowWhenBostedsadresseNotFound() {
+        when(brukerAdresseJpaRepository.getBostedsadresseByFnr("fnr")).thenReturn(List.of());
+
+        assertThatThrownBy(() -> brukerService.getBostedsadresseByFnr("fnr"))
+                .isInstanceOf(ResourceNotFoundException.class)
+                .hasMessage("No residential address found for the given brukernummer");
+    }
+
+    @Test
+    void shouldThrowWhenNoValidBostedsadresseIsFound() {
+        BrukerAdresseEntity entity = new BrukerAdresseEntity();
+        when(brukerAdresseJpaRepository.getBostedsadresseByFnr("fnr")).thenReturn(List.of(entity));
+        when(brukerMapper.toValidBostedsadresse(entity)).thenReturn(null);
+
+        assertThatThrownBy(() -> brukerService.getBostedsadresseByFnr("fnr"))
+                .isInstanceOf(ResourceNotFoundException.class)
+                .hasMessage("No valid residential address found for the given brukernummer");
+    }
+
+    @Test
+    void shouldThrowWhenMultipleValidBostedsadresserAreFound() {
+        BrukerAdresseEntity firstEntity = new BrukerAdresseEntity();
+        BrukerAdresseEntity secondEntity = new BrukerAdresseEntity();
+        when(brukerAdresseJpaRepository.getBostedsadresseByFnr("fnr"))
+                .thenReturn(List.of(firstEntity, secondEntity));
+        when(brukerMapper.toValidBostedsadresse(firstEntity)).thenReturn(new Adresse());
+        when(brukerMapper.toValidBostedsadresse(secondEntity)).thenReturn(new Adresse());
+
+        assertThatThrownBy(() -> brukerService.getBostedsadresseByFnr("fnr"))
+                .isInstanceOf(ResourceNotFoundException.class)
+                .hasMessage("Multiple valid residential addresses found for the given brukernummer");
     }
 
     @Test

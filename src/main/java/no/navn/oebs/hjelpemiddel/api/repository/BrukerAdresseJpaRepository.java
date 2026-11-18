@@ -24,6 +24,13 @@ public interface BrukerAdresseJpaRepository extends JpaRepository<BrukerAdresseE
             FROM APPS.XXRTV_DIGIHOT_OEBS_ADR_FNR_V
             WHERE fnr = :fnr
              """, nativeQuery = true)
-    List<BrukerAdresseEntity> getBrukerAdresseByFnr(@Param("fnr") String fnr);
+    List<BrukerAdresseEntity> getBrukerAdresserByFnr(@Param("fnr") String fnr);
+
+    @Query(value = """
+            SELECT *
+            FROM APPS.XXRTV_DIGIHOT_OEBS_ADR_FNR_V
+            WHERE fnr = :fnr AND primaer_adr = 'Y'
+             """, nativeQuery = true)
+    List<BrukerAdresseEntity> getBostedsadresseByFnr(@Param("fnr") String fnr);
 
 }
