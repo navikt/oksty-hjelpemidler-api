@@ -8,6 +8,7 @@ import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Objects;
 
 @Component
 public class BrukerMapper {
@@ -17,30 +18,48 @@ public class BrukerMapper {
             return null;
         }
         Adresser adresser = new Adresser();
-        //todo: Hvordan skal det håndteres hvis det finnes flere adresser med primæradresse? Skal primæradressen inkluderes i listen over adresser?
+
+        //All bostedsadresser are identical, therefor only add first
+        adresser.setBostedsadresse(toBostedsadresse(adresserEntity.getFirst()));
+
+        //Only add distinct leveringsadresser, they can be duplicated
         adresserEntity.forEach(adresseEntity ->
                 {
-                    Personadresse personadresse= toPersonadresse(adresseEntity);
-                    if ("Y".equals(adresseEntity.getPrimaerAdr())) {
-                        adresser.setPrimaeradresse(personadresse);
-                    } else {
-                        adresser.addAdresserItem(personadresse);
+                    Adresse leveringsAdresse = toLeveringsadresse(adresseEntity);
+                    if (!alreadyPresentLeveringadresse(adresser, leveringsAdresse)) {
+                        adresser.addLeveringsadresserItem(leveringsAdresse);
                     }
                 }
         );
         return adresser;
     }
 
+    private boolean alreadyPresentLeveringadresse(Adresser adresser, Adresse leveringsadresse) {
+        for (Adresse adresse : adresser.getLeveringsadresser()){
+            if (Objects.equals(adresse, leveringsadresse)){
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public Adresse toValidBostedsadresse(BrukerAdresseEntity adresseEntity) {
+        String aktivAdressStatus = "A";
+        if (    aktivAdressStatus.equals(adresseEntity.getStatusBrukernr())
+                && aktivAdressStatus.equals(adresseEntity.getStatusFnr())
+                && aktivAdressStatus.equals(adresseEntity.getStatusAdrPSted())
+                && aktivAdressStatus.equals(adresseEntity.getStatusAdrCSted())
+                && aktivAdressStatus.equals(adresseEntity.getStatusAdrBruk())
+        ) {
+            return toBostedsadresse(adresseEntity);
+        }
+        return null;
+    }
+
     public Bruker toBruker(BrukerInfoRespons brukerInfoRespons) {
         return new Bruker()
                 .aktiv(brukerInfoRespons.brukerStatus().equals("Aktiv"))
                 .brukernummer(brukerInfoRespons.brukerNr());
-    }
-
-    public Personadresse toPersonadresse(BrukerAdresseEntity adresse) {
-        return new Personadresse()
-                .bostedsadresse(toBostedsadresse(adresse))
-                .leveringsadresse(toLeveringsadresse(adresse));
     }
 
     public Adresse toBostedsadresse(BrukerAdresseEntity adresse) {

@@ -37,4 +37,10 @@ public class BrukerController implements BrukerApi {
     public ResponseEntity<Adresser> getAdresser(UUID xCorrelationId, FnrRequestBody request){
         return ResponseEntity.ok(brukerService.getAdresserByFnr(request.getFnr()));
     }
+
+    @Protected
+    @Override
+    public ResponseEntity<Adresse> getBostedsadresse(UUID xCorrelationId, FnrRequestBody request){
+        return ResponseEntity.ok(brukerService.getBostedsadresseByFnr(request.getFnr()));
+    }
 }

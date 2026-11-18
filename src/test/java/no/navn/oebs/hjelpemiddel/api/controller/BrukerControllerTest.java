@@ -3,6 +3,7 @@ package no.navn.oebs.hjelpemiddel.api.controller;
 import no.nav.security.token.support.spring.test.EnableMockOAuth2Server;
 import no.navn.oebs.hjelpemiddel.api.service.BrukerService;
 import org.junit.jupiter.api.Test;
+import org.openapitools.model.Adresse;
 import org.openapitools.model.Adresser;
 import org.openapitools.model.Bruker;
 import org.openapitools.model.Brukerpass;
@@ -56,11 +57,24 @@ class BrukerControllerTest {
         assertThat(brukerService.fnr).isEqualTo(request.getFnr());
     }
 
+    @Test
+    void shouldReturnBostedsadresseFromService() {
+        FnrRequestBody request = new FnrRequestBody("12345678910");
+        brukerService.bostedsadresse = new Adresse().gateadresse("Storgata 1");
+
+        var response = controller.getBostedsadresse(UUID.randomUUID(), request);
+
+        assertThat(response.getStatusCode().value()).isEqualTo(200);
+        assertThat(response.getBody()).isEqualTo(brukerService.bostedsadresse);
+        assertThat(brukerService.fnr).isEqualTo(request.getFnr());
+    }
+
     private static class StubBrukerService extends BrukerService {
         private String fnr;
         private Bruker bruker;
         private List<Brukerpass> brukerpass;
         private Adresser adresser;
+        private Adresse bostedsadresse;
 
         private StubBrukerService() {
             super(null, null, null, null);
@@ -82,6 +96,12 @@ class BrukerControllerTest {
         public Adresser getAdresserByFnr(String fnr) {
             this.fnr = fnr;
             return adresser;
+        }
+
+        @Override
+        public Adresse getBostedsadresseByFnr(String fnr) {
+            this.fnr = fnr;
+            return bostedsadresse;
         }
     }
 }
