@@ -15,6 +15,13 @@ spec:
       allowAllUsers: false
       tenant: trygdeetaten.no
 
+  accessPolicy:
+    inbound:
+      rules:
+        - application: hotpot
+          namespace: teamdigihot
+          cluster: dev-gcp
+
   envFrom:
     - secret: hjelpemidler-api
     - secret: hjelpemidler-api-oracle
