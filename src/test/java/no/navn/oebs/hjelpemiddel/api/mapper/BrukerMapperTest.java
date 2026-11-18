@@ -106,10 +106,11 @@ class BrukerMapperTest {
                 result.getLeveringsadresser().getLast());
     }
 
-    @Test
-    void shouldMapValidPrimaryBostedsadresse() {
+    @ParameterizedTest
+    @ValueSource(strings = {"Y", "N"})
+    void shouldMapBostedsadresseWhenAllStatusesAreActive(String primary) {
         BrukerAdresseEntity entity = createAdresseEntity(
-                "Y", "Storgata 1", "0123", "Oslo", "0301",
+                primary, "Storgata 1", "0123", "Oslo", "0301",
                 "Leveringsveien 2", "0456", "Oslo", "0301", "Sentrum");
 
         Adresse result = brukerMapper.toValidBostedsadresse(entity);
@@ -122,25 +123,19 @@ class BrukerMapperTest {
 
     @ParameterizedTest
     @CsvSource({
-            "primaerAdr, N",
             "statusBrukernr, I",
             "statusFnr, I",
             "statusAdrPSted, I",
             "statusAdrCSted, I",
             "statusAdrBruk, I"
     })
-    void shouldRejectBostedsadresseWhenNotPrimaryOrStatusInactive(String field, String value) {
+    void shouldRejectBostedsadresseWhenStatusIsInactive(String field, String value) {
         BrukerAdresseEntity entity = createAdresseEntity(
                 "Y", "Storgata 1", "0123", "Oslo", "0301",
                 "Leveringsveien 2", "0456", "Oslo", "0301", "Sentrum");
         ReflectionTestUtils.setField(entity, field, value);
 
         assertThat(brukerMapper.toValidBostedsadresse(entity)).isNull();
-    }
-
-    @Test
-    void shouldReturnNullWhenBostedsadresseEntityIsNull() {
-        assertThat(brukerMapper.toValidBostedsadresse(null)).isNull();
     }
 
     @ParameterizedTest

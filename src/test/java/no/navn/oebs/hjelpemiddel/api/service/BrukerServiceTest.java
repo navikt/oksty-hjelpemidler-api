@@ -2,6 +2,7 @@ package no.navn.oebs.hjelpemiddel.api.service;
 
 import no.navn.oebs.hjelpemiddel.api.dto.BrukerInfoRespons;
 import no.navn.oebs.hjelpemiddel.api.dto.BrukerpassRespons;
+import no.navn.oebs.hjelpemiddel.api.exception.MultiplePrimaryAddressesException;
 import no.navn.oebs.hjelpemiddel.api.exception.ResourceNotFoundException;
 import no.navn.oebs.hjelpemiddel.api.mapper.BrukerMapper;
 import no.navn.oebs.hjelpemiddel.api.repository.BrukerAdresseJpaRepository;
@@ -17,12 +18,14 @@ import org.openapitools.model.Adresse;
 import org.openapitools.model.Adresser;
 import org.openapitools.model.Bruker;
 import org.openapitools.model.Brukerpass;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -69,22 +72,19 @@ class BrukerServiceTest {
     }
 
     @Test
-    void shouldReturnUniqueValidBostedsadresseAndFilterInvalidAddresses() {
+    void shouldReturnBostedsadresseWhenSinglePrimaryAddressIsValid() {
         BrukerAdresseEntity validEntity = new BrukerAdresseEntity();
-        BrukerAdresseEntity invalidEntity = new BrukerAdresseEntity();
-        List<BrukerAdresseEntity> entities = List.of(validEntity, invalidEntity);
+        List<BrukerAdresseEntity> entities = List.of(validEntity);
         Adresse expectedAdresse = new Adresse().gateadresse("Storgata 1");
 
         when(brukerAdresseJpaRepository.getBostedsadresseByFnr("fnr")).thenReturn(entities);
         when(brukerMapper.toValidBostedsadresse(validEntity)).thenReturn(expectedAdresse);
-        when(brukerMapper.toValidBostedsadresse(invalidEntity)).thenReturn(null);
 
         Adresse actual = brukerService.getBostedsadresseByFnr("fnr");
 
         assertThat(actual).isSameAs(expectedAdresse);
         verify(brukerAdresseJpaRepository).getBostedsadresseByFnr("fnr");
         verify(brukerMapper).toValidBostedsadresse(validEntity);
-        verify(brukerMapper).toValidBostedsadresse(invalidEntity);
     }
 
     @Test
@@ -93,32 +93,40 @@ class BrukerServiceTest {
 
         assertThatThrownBy(() -> brukerService.getBostedsadresseByFnr("fnr"))
                 .isInstanceOf(ResourceNotFoundException.class)
-                .hasMessage("No residential address found for the given brukernummer");
+                .hasMessage("No bostedsadresser with primary flag 'Y' found for the given fnr");
+
+        verifyNoInteractions(brukerMapper);
     }
 
     @Test
     void shouldThrowWhenNoValidBostedsadresseIsFound() {
         BrukerAdresseEntity entity = new BrukerAdresseEntity();
+        ReflectionTestUtils.setField(entity, "statusBrukernr", "A");
+        ReflectionTestUtils.setField(entity, "statusFnr", "I");
+        ReflectionTestUtils.setField(entity, "statusAdrPSted", "A");
+        ReflectionTestUtils.setField(entity, "statusAdrCSted", "A");
         when(brukerAdresseJpaRepository.getBostedsadresseByFnr("fnr")).thenReturn(List.of(entity));
         when(brukerMapper.toValidBostedsadresse(entity)).thenReturn(null);
 
         assertThatThrownBy(() -> brukerService.getBostedsadresseByFnr("fnr"))
                 .isInstanceOf(ResourceNotFoundException.class)
-                .hasMessage("No valid residential address found for the given brukernummer");
+                .hasMessage("No valid bostedsadresse found due to one or more of the status columns: " +
+                        "status_brukernr: A, status_fnr: I, status_adr_p_sted: A, " +
+                        "status_adr_c_sted: A, status_adr_bruk: null");
     }
 
     @Test
-    void shouldThrowWhenMultipleValidBostedsadresserAreFound() {
+    void shouldThrowWhenMultiplePrimaryAddressesAreFoundBeforeCheckingStatuses() {
         BrukerAdresseEntity firstEntity = new BrukerAdresseEntity();
         BrukerAdresseEntity secondEntity = new BrukerAdresseEntity();
         when(brukerAdresseJpaRepository.getBostedsadresseByFnr("fnr"))
                 .thenReturn(List.of(firstEntity, secondEntity));
-        when(brukerMapper.toValidBostedsadresse(firstEntity)).thenReturn(new Adresse());
-        when(brukerMapper.toValidBostedsadresse(secondEntity)).thenReturn(new Adresse());
 
         assertThatThrownBy(() -> brukerService.getBostedsadresseByFnr("fnr"))
-                .isInstanceOf(ResourceNotFoundException.class)
-                .hasMessage("Multiple valid residential addresses found for the given brukernummer");
+                .isInstanceOf(MultiplePrimaryAddressesException.class)
+                .hasMessage("More than one bostedsadresse with primary flag 'Y' found for the given fnr");
+
+        verifyNoInteractions(brukerMapper);
     }
 
     @Test
